@@ -1,0 +1,14 @@
+{
+  "name": "jasahub-vercel-supabase",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "node --env-file-if-exists=.env scripts/dev.js",
+    "create-admin": "node --env-file=.env scripts/create-admin.js",
+    "import": "node --env-file=.env scripts/import-legacy.js"
+  }
+}
