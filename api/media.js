@@ -9,7 +9,7 @@ export default async function handler(req,res){
  try{
   const query=new URLSearchParams({'data->>fileId':'eq.'+id,select:'data'});
   const rows=await sb('/rest/v1/media?'+query);
-  const row=rows[0]?.data;if(!row)return res.status(404).json({ok:false,error:'Gambar tidak ditemukan.'});
+  const row=rows[0]?.data;if(!row||['attachment','deliverable'].includes(row.kind))return res.status(404).json({ok:false,error:'Gambar tidak ditemukan.'});
   const bytes=await downloadImage(row);
   res.removeHeader('Vercel-CDN-Cache-Control');
   res.setHeader('Cache-Control','public, max-age=300, s-maxage=86400, stale-while-revalidate=60');

@@ -3,11 +3,11 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 const root=resolve('public');
-const routes={jasa:(await import('../api/jasa.js')).default,rpc:(await import('../api/rpc.js')).default,media:(await import('../api/media.js')).default};
+const routes={jasa:(await import('../api/jasa.js')).default,rpc:(await import('../api/rpc.js')).default,file:(await import('../api/file.js')).default,media:(await import('../api/media.js')).default};
 http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost');
-  const route=url.pathname.match(/^\/api\/(jasa|rpc|media)$/)?.[1];
+  const route=url.pathname.match(/^\/api\/(jasa|rpc|media|file)$/)?.[1];
   if(route){
    const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>2400000){res.writeHead(413).end();return;}chunks.push(chunk);}
    req.body=Buffer.concat(chunks).toString();req.query=Object.fromEntries(url.searchParams);

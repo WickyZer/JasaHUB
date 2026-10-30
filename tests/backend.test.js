@@ -116,3 +116,21 @@ test('media endpoint serves only registered images and caches successful bytes',
  const invalid=response();await media({method:'GET',query:{id:'../../secret'}},invalid);assert.equal(invalid.code,400);assert.equal(storageRequests,1);
  }finally{restore();}
 });
+test('private files require a session and are never served by public media route',async()=>{
+ const file=(await import('../api/file.js')).default,media=(await import('../api/media.js')).default;
+ const res=response();await file({method:'GET',query:{id:'a'.repeat(32)},headers:{}},res);assert.equal(res.code,401);
+ const restore=restoreFetch(async()=>Response.json([{data:{fileId:'a'.repeat(32),kind:'attachment',ownerId:admin().id,mime:'application/pdf'}}]));
+ try{const publicRes=response();await media({method:'GET',query:{id:'a'.repeat(32)}},publicRes);assert.equal(publicRes.code,404);}finally{restore();}
+});
+test('private file download checks order ownership and returns no-store downloads',async()=>{
+ const file=(await import('../api/file.js')).default;let storageCalls=0,owner=admin().id;
+ const restore=restoreFetch(async url=>{
+  if(url.endsWith('/auth/v1/user'))return Response.json({id:customer().id});
+  if(url.includes('/profiles?'))return Response.json([profile()]);
+  if(url.includes('/media?'))return Response.json([{data:{fileId:'a'.repeat(32),kind:'deliverable',ownerId:admin().id,orderId:'order1',path:admin().id+'/'+('a'.repeat(32))+'.pdf',name:'hasil.pdf'}}]);
+  if(url.includes('/orders?'))return Response.json([{data:{userId:owner}}]);
+  if(url.includes('/storage/')){storageCalls++;return new Response('test bytes');}
+  throw Error('Unexpected URL');
+ });
+ try{const req={...request({}),method:'GET',query:{id:'a'.repeat(32)}};const denied=response();await file(req,denied);assert.equal(denied.code,404);assert.equal(storageCalls,0);owner=customer().id;const ok=response();await file(req,ok);assert.equal(ok.code,200);assert.equal(storageCalls,1);assert.equal(ok.headers['Cache-Control'],'private, no-store');assert.match(ok.headers['Content-Disposition'],/attachment/);}finally{restore();}
+});
