@@ -16,6 +16,6 @@ http.createServer(async(req,res)=>{
   }
   const file=resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!file.startsWith(root+'/')){res.writeHead(403).end();return;}
-  const bytes=await readFile(file);res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png','.css':'text/css; charset=utf-8'})[extname(file)]||'application/octet-stream');res.end(bytes);
+  const bytes=await readFile(file);res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png','.css':'text/css; charset=utf-8','.webmanifest':'application/manifest+json','.ico':'image/x-icon'})[extname(file)]||'application/octet-stream');res.end(bytes);
  }catch(error){res.statusCode=404;res.end('Not found');}
 }).listen(Number(process.env.PORT||3000),'127.0.0.1',()=>console.log('JASAhub: http://localhost:'+(process.env.PORT||3000)));

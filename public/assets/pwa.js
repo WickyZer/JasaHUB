@@ -1,0 +1,42 @@
+'use strict';
+/* Sidebar on every page, installable app, and guarded admin order removal. */
+brandImg=function(){const src=S.settings.logoAssetVersion==='pwa-v1'?safeUrl(S.settings.logoUrl,true)||'/assets/logo-website.png':'/assets/logo-website.png';return `<img class="brand-image" src="${esc(src)}" alt="JASAhub" width="180" height="60">`;};
+const settingsWithNewLogo=settingsPage;settingsPage=function(){settingsWithNewLogo();const form=$('#settingsForm');const field=document.createElement('input');field.type='hidden';field.name='logoAssetVersion';field.value='pwa-v1';form.append(field);if(S.admin.settings.logoAssetVersion!=='pwa-v1'){S.customLogo='';$('#logoUrlInput').value='';}};
+function desktopWorkspace(){return matchMedia('(min-width:901px)').matches&&document.body.classList.contains('workspace');}
+setNavOpen=function(open){
+ const sidebar=$('#sidebar'),button=$('#menuToggle');
+ if(desktopWorkspace())document.body.classList.toggle('sidebar-collapsed',!open);
+ sidebar.classList.toggle('open',open);sidebar.inert=!open;sidebar.setAttribute('aria-hidden',String(!open));
+ $('#navBackdrop').classList.toggle('open',open&&!desktopWorkspace());
+ document.body.classList.toggle('nav-drawer-open',open&&!desktopWorkspace());
+ button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Tutup sidebar':'Buka sidebar');
+ if(!open&&sidebar.contains(document.activeElement))button.focus({preventScroll:true});
+};
+closeNav=function(){setNavOpen(desktopWorkspace()?!document.body.classList.contains('sidebar-collapsed'):false);};
+window.addEventListener('resize',closeNav);
+let deferredInstall=null;
+function installed(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}
+function installButton(){return `<button class="iconbtn install-app-button" data-action="installApp" aria-label="Pasang aplikasi JASAhub" title="Pasang aplikasi JASAhub" ${installed()?'hidden':''}>${icon('download',20)}</button>`;}
+paths.download='<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>';
+const appTopbar=topbar;topbar=function(){appTopbar();$('#topactions').insertAdjacentHTML('afterbegin',installButton());};
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;document.querySelectorAll('[data-action="installApp"]').forEach(b=>b.hidden=false);});
+window.addEventListener('appinstalled',()=>{deferredInstall=null;document.querySelectorAll('[data-action="installApp"]').forEach(b=>b.hidden=true);toast('JASAhub berhasil dipasang.');});
+async function installApp(){
+ if(installed()){toast('JASAhub sedang dibuka sebagai aplikasi.');return;}
+ if(deferredInstall){const prompt=deferredInstall;deferredInstall=null;try{await prompt.prompt();const choice=await prompt.userChoice;if(choice.outcome==='accepted')toast('Permintaan pemasangan diterima. Ikuti petunjuk browser.');}catch{showInstallHelp();}return;}
+ showInstallHelp();
+}
+function showInstallHelp(){const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1;showModal('Pasang Aplikasi JASAhub',`<div class="install-intro"><img src="/assets/icons/icon-192.png" width="80" height="80" alt="Ikon aplikasi JH"><div><h3>JASAhub</h3><p class="tiny muted">Akses layanan dan pesanan dari layar utama.</p></div></div>${ios?'<ol class="install-steps"><li>Buka website ini di Safari.</li><li>Tekan tombol Bagikan / Share.</li><li>Pilih Tambahkan ke Layar Utama / Add to Home Screen.</li><li>Konfirmasi dengan menekan Tambah.</li></ol>':'<ol class="install-steps"><li>Buka website ini melalui Chrome atau Edge menggunakan alamat HTTPS.</li><li>Buka menu browser, lalu pilih Instal aplikasi / Install app atau Tambahkan ke layar utama.</li><li>Ikuti konfirmasi pemasangan dari browser.</li></ol>'}<p class="formhint">Pilihan pemasangan mengikuti dukungan browser dan perangkat. Jika belum muncul, muat ulang lalu kunjungi kembali. Login, checkout, pembayaran, dan data pesanan tetap memerlukan koneksi internet.</p><button class="btn primary" data-action="close">Mengerti</button>`,true);}
+$('#nav').insertAdjacentHTML('beforeend',`<button class="navlink install-nav" data-action="installApp">${icon('download',20)} Pasang Aplikasi</button>`);
+$('.sitefooter').insertAdjacentHTML('beforeend',`<div><h3>Aplikasi JASAhub</h3><p>Pasang di HP atau komputer untuk akses lebih mudah.</p><button class="btn" data-action="installApp">${icon('download',17)} Pasang Aplikasi</button></div>`);
+const deletionLabel=o=>`<div class="checkoutsummary"><span class="tiny muted">${esc(o.id)}</span><h3>${esc(o.title)}</h3><p>${esc(o.status)} · ${rupiah(o.price)}</p></div>`;
+function deleteStageOne(id){const o=S.admin?.orders.find(x=>x.id===id);if(!o)return;S.deleteOrderState={id,stage:1,ticket:null};showModal('Hapus Pesanan · Konfirmasi 1 dari 2',`${deletionLabel(o)}<p style="margin-top:18px">Pesanan akan dihapus dari daftar pelanggan dan laporan aktif. Pastikan ID pesanan sudah benar.</p><p class="tiny muted">Pembayaran yang sudah masuk tidak dikembalikan secara otomatis. Salinan data tetap disimpan sebagai arsip di database.</p><div class="formfoot"><button class="btn" data-action="close">Batal</button><button class="btn danger" data-action="prepareOrderDelete" data-id="${esc(id)}">Ya, Lanjutkan Verifikasi</button></div>`,true);}
+async function prepareOrderDelete(button){const state=S.deleteOrderState;if(!state||state.stage!==1||state.id!==button.dataset.id)return;button.disabled=true;try{const result=await api('prepareDeleteOrder',{id:state.id});if(!$('#modal').open||S.deleteOrderState!==state)return;state.stage=2;state.ticket=result.ticket;showModal('Hapus Pesanan · Konfirmasi 2 dari 2',`${deletionLabel(result)}<p style="margin-top:18px"><strong>Konfirmasi terakhir.</strong> Hapus pesanan ini dari tampilan pelanggan dan admin?</p><p class="tiny muted">Status, nilai laporan, dan jumlah pemakaian promo aktif akan mengikuti penghapusan ini. Berkas pesanan tidak dihapus dari penyimpanan.</p><div id="deleteOrderError" class="error" role="alert" tabindex="-1"></div><div class="formfoot"><button class="btn" data-action="close">Batal</button><button class="btn danger" data-action="confirmOrderDelete" data-id="${esc(state.id)}">Konfirmasi Hapus Pesanan</button></div>`,true);}catch(e){toast(e.message);if(button.isConnected)button.disabled=false;}}
+async function confirmOrderDelete(button){const state=S.deleteOrderState;if(!state||state.stage!==2||!state.ticket||state.id!==button.dataset.id)return;button.disabled=true;try{await api('deleteOrder',{id:state.id,ticket:state.ticket,confirm:true});S.deleteOrderState=null;clearBrowserCatalog();$('#modal').close();await syncAdmin();S.orders=null;renderAdmin();toast('Pesanan berhasil dihapus dari daftar aktif.');}catch(e){if($('#deleteOrderError'))$('#deleteOrderError').textContent=e.message;else toast(e.message);if(button.isConnected)button.disabled=false;}}
+const beforeDeleteOrders=renderAdminOrders;renderAdminOrders=function(){beforeDeleteOrders();document.querySelectorAll('#adminOrderList [data-action="editOrder"]').forEach(b=>{const del=document.createElement('button');del.className='btn danger small';del.dataset.action='deleteOrderPrompt';del.dataset.id=b.dataset.id;del.textContent='Hapus Pesanan';b.parentElement.append(del);});};
+const beforeDeleteEdit=editOrder;editOrder=function(id){beforeDeleteEdit(id);if(!$('#modal').open)return;$('#modalBody').insertAdjacentHTML('beforeend',`<section class="delete-order-zone"><h3>Hapus Pesanan</h3><p class="tiny muted">Gunakan untuk pesanan keliru atau tidak valid. Memerlukan dua tahap konfirmasi.</p><button class="btn danger" data-action="deleteOrderPrompt" data-id="${esc(id)}">Hapus Pesanan</button></section>`);};
+$('#modal').addEventListener('close',()=>{S.deleteOrderState=null;});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const action=b.dataset.action;if(action==='installApp')await installApp();else if(action==='deleteOrderPrompt')deleteStageOne(b.dataset.id);else if(action==='prepareOrderDelete')await prepareOrderDelete(b);else if(action==='confirmOrderDelete')await confirmOrderDelete(b);});
+if('serviceWorker' in navigator&&window.isSecureContext){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{ /* Website stays usable when service workers are unavailable. */ });});}
+document.querySelectorAll('[data-action="installApp"]').forEach(b=>b.hidden=installed());
+boot();

@@ -134,3 +134,14 @@ test('private file download checks order ownership and returns no-store download
  });
  try{const req={...request({}),method:'GET',query:{id:'a'.repeat(32)}};const denied=response();await file(req,denied);assert.equal(denied.code,404);assert.equal(storageCalls,0);owner=customer().id;const ok=response();await file(req,ok);assert.equal(ok.code,200);assert.equal(storageCalls,1);assert.equal(ok.headers['Cache-Control'],'private, no-store');assert.match(ok.headers['Content-Disposition'],/attachment/);}finally{restore();}
 });
+test('deleted order denies downloads even when customer originally uploaded the file',async()=>{
+ const file=(await import('../api/file.js')).default;let fetched=false;
+ const restore=restoreFetch(async url=>{
+  if(url.endsWith('/auth/v1/user'))return Response.json({id:customer().id});
+  if(url.includes('/profiles?'))return Response.json([profile()]);
+  if(url.includes('/media?'))return Response.json([{data:{fileId:'a'.repeat(32),kind:'attachment',ownerId:customer().id,orderId:'removed'}}]);
+  if(url.includes('/orders?'))return Response.json([{data:{userId:customer().id,deletedAt:new Date().toISOString()}}]);
+  fetched=true;throw Error('Must not fetch storage');
+ });
+ try{const res=response();await file({...request({}),method:'GET',query:{id:'a'.repeat(32)}},res);assert.equal(res.code,404);assert.equal(fetched,false);}finally{restore();}
+});

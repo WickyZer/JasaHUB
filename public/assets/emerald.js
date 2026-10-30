@@ -78,4 +78,4 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acti
  else if(a==='reviewEmeraldOrder')showModal('Ulasan Pesanan',`<form id="reviewEmeraldForm" data-id="${esc(b.dataset.id)}" class="stack"><label class="field">Rating<select name="rating">${[5,4,3,2,1].map(n=>`<option value="${n}">${n} / 5</option>`).join('')}</select></label><label class="field">Pengalaman Anda<textarea name="text" minlength="5" maxlength="1200" required></textarea></label><p class="tiny muted">Nama depan, rating, dan ulasan tampil publik. Jangan mencantumkan informasi pribadi.</p><div id="reviewError" class="error" tabindex="-1" role="alert"></div><button class="btn primary" type="submit">Kirim Ulasan</button></form>`,true);
  }catch(err){toast(err.message);if(b.isConnected)b.disabled=false;}});
 $('#adminSubnav').insertAdjacentHTML('beforeend','<a class="navlink" href="#admin/combos">'+icon('layers')+'Tambahan & Combo</a><a class="navlink" href="#admin/promotions">'+icon('wallet')+'Promo</a><a class="navlink" href="#admin/reviews">'+icon('message')+'Ulasan</a>');
-boot();
+// pwa.js starts the app after installing all upgraded views.

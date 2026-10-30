@@ -6,7 +6,7 @@ import {uploadPrivateFile} from '../lib/private-files.js';
 import {uploadImage} from '../lib/media.js';
 import {noStore,errorResponse,validatePost} from '../lib/http.js';
 const AUTH=new Set(['challenge','register','login','logout','me','updateProfile','changePassword']);
-const BUSINESS=new Set(['quoteOrder','saveServiceOptions','savePromo','submitReview','moderateReview','addProgress','resolveRevision','uploadAttachment','uploadDeliverable','orders','createOrder','confirmPayment','requestRevision','completeOrder','adminData','uploadMedia','saveProduct','saveCategory','deleteProduct','updateCategory','deleteCategory','savePreview','deletePreview','reorderPreviews','updateOrder','saveSettings']);
+const BUSINESS=new Set(['prepareDeleteOrder','deleteOrder','quoteOrder','saveServiceOptions','savePromo','submitReview','moderateReview','addProgress','resolveRevision','uploadAttachment','uploadDeliverable','orders','createOrder','confirmPayment','requestRevision','completeOrder','adminData','uploadMedia','saveProduct','saveCategory','deleteProduct','updateCategory','deleteCategory','savePreview','deletePreview','reorderPreviews','updateOrder','saveSettings']);
 export default async function handler(req,res){
  noStore(res);
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({ok:false,error:'Gunakan POST.'});}
