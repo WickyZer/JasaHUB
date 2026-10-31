@@ -10,7 +10,16 @@ brandImg=function(){const custom=safeUrl(S.settings.logoUrl,true);return custom?
 const oldTopbar=topbar;topbar=function(){oldTopbar();if(!S.user)$('#topactions').innerHTML='<button class="btn small" data-action="auth" data-mode="login">Masuk</button><button class="btn primary small" data-action="auth" data-mode="register">Daftar</button>';};
 const oldSetNav=setNavOpen;setNavOpen=function(open){if(matchMedia('(min-width:901px)').matches&&document.body.classList.contains('workspace')){document.body.classList.toggle('sidebar-collapsed');const collapsed=document.body.classList.contains('sidebar-collapsed');$('#sidebar').inert=collapsed;$('#sidebar').setAttribute('aria-hidden',String(collapsed));$('#menuToggle').setAttribute('aria-expanded',String(!collapsed));return;}oldSetNav(open);};
 closeNav=function(){oldSetNav(false);if(matchMedia('(min-width:901px)').matches&&document.body.classList.contains('workspace')){const collapsed=document.body.classList.contains('sidebar-collapsed');$('#sidebar').inert=collapsed;$('#sidebar').setAttribute('aria-hidden',String(collapsed));$('#menuToggle').setAttribute('aria-expanded',String(!collapsed));}};
-const oldRoute=route;route=async function(){await oldRoute();window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});};
+const oldRoute=route;let navigationAnimation=null;
+route=async function(){
+ navigationAnimation?.cancel();navigationAnimation=null;
+ const request=oldRoute(),version=S.routeVersion;await request;
+ if(version!==S.routeVersion)return;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});
+ const page=$('#page');
+ if(!reduced&&typeof page.animate==='function')navigationAnimation=page.animate([{opacity:.35,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:230,easing:'cubic-bezier(.2,.7,.3,1)'});
+};
 catalog=function(){
  const all=location.hash==='#catalog/all';
  const benefits=[['layers','Banyak Pilihan','Layanan digital lengkap'],['bag','Proses Mudah','Order hanya beberapa klik'],['shield','Pembayaran Aman','QRIS & verifikasi manual'],['clock','Progres Terpantau','Status jelas di akunmu']];
@@ -79,3 +88,4 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acti
  }catch(err){toast(err.message);if(b.isConnected)b.disabled=false;}});
 $('#adminSubnav').insertAdjacentHTML('beforeend','<a class="navlink" href="#admin/combos">'+icon('layers')+'Tambahan & Combo</a><a class="navlink" href="#admin/promotions">'+icon('wallet')+'Promo</a><a class="navlink" href="#admin/reviews">'+icon('message')+'Ulasan</a>');
 // pwa.js starts the app after installing all upgraded views.
+
