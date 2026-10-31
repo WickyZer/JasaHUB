@@ -1,6 +1,6 @@
 /* Cache only an explicit public application shell. APIs and order files always use the network. */
-const CACHE='jasahub-shell-pwa-v3-detail';
-const SHELL=['/','/offline.html','/assets/emerald.css','/assets/jasahub.js','/assets/emerald.js','/assets/service-detail.js','/assets/hero-jasahub.webp','/assets/pwa.js','/assets/logo-website.png','/assets/icons/icon-192.png','/assets/icons/icon-512.png','/assets/icons/icon-maskable-512.png','/manifest.webmanifest'];
+const CACHE='jasahub-shell-pwa-v4-sellers';
+const SHELL=['/','/offline.html','/assets/emerald.css','/assets/jasahub.js','/assets/emerald.js','/assets/service-detail.js','/assets/marketplace.js','/assets/hero-jasahub.webp','/assets/pwa.js','/assets/logo-website.png','/assets/icons/icon-192.png','/assets/icons/icon-512.png','/assets/icons/icon-maskable-512.png','/manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('jasahub-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{

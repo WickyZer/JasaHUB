@@ -1,7 +1,7 @@
 'use strict';
 /* Sidebar on every page, installable app, and guarded admin order removal. */
 brandImg=function(){const src=S.settings.logoAssetVersion==='pwa-v1'?safeUrl(S.settings.logoUrl,true)||'/assets/logo-website.png':'/assets/logo-website.png';return `<img class="brand-image" src="${esc(src)}" alt="JASAhub" width="180" height="60">`;};
-const settingsWithNewLogo=settingsPage;settingsPage=function(){settingsWithNewLogo();const form=$('#settingsForm');const field=document.createElement('input');field.type='hidden';field.name='logoAssetVersion';field.value='pwa-v1';form.append(field);if(S.admin.settings.logoAssetVersion!=='pwa-v1'){S.customLogo='';$('#logoUrlInput').value='';}};
+const settingsWithNewLogo=settingsPage;settingsPage=function(){settingsWithNewLogo();if(S.user?.role==='seller')return;const form=$('#settingsForm');const field=document.createElement('input');field.type='hidden';field.name='logoAssetVersion';field.value='pwa-v1';form.append(field);if(S.admin.settings.logoAssetVersion!=='pwa-v1'){S.customLogo='';$('#logoUrlInput').value='';}};
 function desktopWorkspace(){return matchMedia('(min-width:901px)').matches&&document.body.classList.contains('workspace');}
 setNavOpen=function(open){
  const sidebar=$('#sidebar'),button=$('#menuToggle');
@@ -40,3 +40,4 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acti
 if('serviceWorker' in navigator&&window.isSecureContext){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{ /* Website stays usable when service workers are unavailable. */ });});}
 document.querySelectorAll('[data-action="installApp"]').forEach(b=>b.hidden=installed());
 boot();
+
